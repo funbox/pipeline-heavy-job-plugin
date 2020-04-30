@@ -21,7 +21,6 @@ import org.jenkinsci.plugins.workflow.actions.QueueItemAction;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepExecutionImpl;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.durable_task.Messages;
 
 public class NodeWithWeightStepExecution extends AbstractStepExecutionImpl {
 
@@ -184,7 +183,7 @@ public class NodeWithWeightStepExecution extends AbstractStepExecutionImpl {
                 if (li.task instanceof PlaceholderTask) {
                     PlaceholderTask task = (PlaceholderTask) li.task;
                     if (!task.stopping) {
-                        task.getContext().onFailure(new AbortException(Messages.ExecutorStepExecution_queue_task_cancelled()));
+                        task.getContext().onFailure(new AbortException("Queue task was cancelled"));
                     }
                 }
             }

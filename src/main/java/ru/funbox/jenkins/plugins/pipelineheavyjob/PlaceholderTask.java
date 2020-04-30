@@ -33,7 +33,6 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.FlowScanningUtils;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.durable_task.Messages;
 import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.concurrent.Timeout;
 import org.jenkinsci.plugins.workflow.support.steps.FilePathDynamicContext;
@@ -295,12 +294,12 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
             String runDisplayName = r.getFullDisplayName();
             String enclosingLabel = getEnclosingLabel();
             if (enclosingLabel != null) {
-                return org.jenkinsci.plugins.workflow.steps.durable_task.Messages.ExecutorStepExecution_PlaceholderTask_displayName_label(runDisplayName, enclosingLabel);
+                return String.format("%s (%s)", runDisplayName, enclosingLabel);
             } else {
-                return org.jenkinsci.plugins.workflow.steps.durable_task.Messages.ExecutorStepExecution_PlaceholderTask_displayName(runDisplayName);
+                return String.format("part of %s", runDisplayName);
             }
         } else {
-            return Messages.ExecutorStepExecution_PlaceholderTask_displayName(runId);
+            return String.format("part of %s", runId);
         }
     }
 
