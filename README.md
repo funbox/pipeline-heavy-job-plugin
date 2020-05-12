@@ -7,9 +7,31 @@ Freestyle-проектах.
 
 ## Пример использования
 
+Pipeline-команда:
+
 ```groovy
 nodeWithWeight(label: 'nodejs', weight: 2) {
     echo 'Run heavy tests'
+}
+```
+
+Pipeline Declarative синтаксис:
+
+```groovy
+pipeline {
+    agent {
+        nodeWithWeight {
+            label 'nodejs'
+            weight 2
+        }
+    }
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Run heavy build'
+            }
+        }
+    }
 }
 ```
 
