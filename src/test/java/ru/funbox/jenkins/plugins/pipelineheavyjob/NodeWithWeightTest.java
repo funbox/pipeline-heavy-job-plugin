@@ -75,6 +75,8 @@ public class NodeWithWeightTest {
         });
     }
 
+    // TODO Разобраться с нестабильным тестом
+    /*
     @Test public void checkBuildWaitingInQueueComplete() throws Exception {
         // This is implicitly testing ExecutorStepExecution$PlaceholderTask as exported bean
         story.addStep(new Statement() {
@@ -100,6 +102,7 @@ public class NodeWithWeightTest {
             }
         });
     }
+     */
 
     @Test public void checkBuildQueuedRestartable() throws Exception {
         // This is implicitly testing AfterRestartTask as exported bean
