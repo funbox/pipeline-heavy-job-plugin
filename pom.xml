@@ -7,21 +7,30 @@
         <version>3.50</version>
         <relativePath />
     </parent>
-    <groupId>io.jenkins.plugins</groupId>
+    <groupId>ru.funbox.jenkins.plugins</groupId>
     <artifactId>pipeline-heavy-job-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
     <properties>
-        <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
+        <revision>1.0</revision>
+        <changelist>-SNAPSHOT</changelist>
         <jenkins.version>2.164.3</jenkins.version>
         <java.level>8</java.level>
-        <!-- Other properties you may want to use:
-          ~ jenkins-test-harness.version: Jenkins Test Harness version you use to test the plugin. For Jenkins version >= 1.580.1 use JTH 2.0 or higher.
-          ~ hpi-plugin.version: The HPI Maven Plugin version used by the plugin..
-          ~ stapler-plugin.version: The Stapler Maven plugin version required by the plugin.
-     -->
     </properties>
     <name>Pipeline HeavyJob Plugin</name>
+    <description>
+        This plugin allows to define job weight for pipeline projects.
+        This makes it possible to use server resources more efficiently.
+    </description>
+
+    <developers>
+        <developer>
+            <id>goganchic</id>
+            <name>Egor Baranov</name>
+            <email>goganchic@gmail.com</email>
+        </developer>
+    </developers>
+
     <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
     <licenses>
         <license>
@@ -84,15 +93,6 @@
             <version>2.31</version>
         </dependency>
     </dependencies>
-
-    <!-- If you want this to appear on the wiki page:
-    <developers>
-      <developer>
-        <id>bhacker</id>
-        <name>Bob Q. Hacker</name>
-        <email>bhacker@nowhere.net</email>
-      </developer>
-    </developers> -->
 
     <!-- Assuming you want to host on @jenkinsci:
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
