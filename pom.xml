@@ -8,7 +8,7 @@
         <relativePath />
     </parent>
     <groupId>ru.funbox.jenkins.plugins</groupId>
-    <artifactId>pipeline-heavy-job-plugin</artifactId>
+    <artifactId>pipeline-heavy-job</artifactId>
     <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
     <properties>
