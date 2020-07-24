@@ -1,13 +1,14 @@
 # Pipeline HeavyJob Plugin
 
-Плагин для Jenkins, который позволяет указывать вес того или иного шага в
-Pipeline-проектах, как это делал
-[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) в
-Freestyle-проектах.
+This plugin allows defining job weight for pipeline projects as
+[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) for freestyle
+projects.
 
-## Пример использования
+[По-русски](./README.ru.md)
 
-Pipeline-команда:
+## Usage
+
+Pipeline:
 
 ```groovy
 nodeWithWeight(label: 'nodejs', weight: 2) {
@@ -15,7 +16,7 @@ nodeWithWeight(label: 'nodejs', weight: 2) {
 }
 ```
 
-Pipeline Declarative синтаксис:
+Pipeline Declarative Syntax:
 
 ```groovy
 pipeline {
@@ -35,166 +36,73 @@ pipeline {
 }
 ```
 
-## Запуск плагина в процессе разработки
+## Rationale
 
-1. активировать java 1.8;
-2. запустить `mvn hpi:run`.
+Typical Jenkins setup consists of the main server with several worker nodes.
+Each node has several slots. By default one build occupies one slot. If the
+quantity of builds is larger than the quantity of slots some of the builds wait
+in the queue.
 
-Инстанс Jenkins с установленным плагином будет доступен по адресу
-http://localhost:8080/jenkins.
+Each node has a limited amount of resources like CPU, RAM, or network. Different
+builds require different amount of these resources but each build occupies only
+one slot. That is why in some cases one node can be overloaded and another
+almost idle.
 
-Для запуска тестов можно воспользоваться командой `mvn test` или средствами
-IDE.
+There are several ways to solve such a problem.
 
-## Мотивация
+Suppose we have two types of builds: light and heavy. Heavy build requires twice
+much more resources than light one. Suppose we have two worker nodes. Each node
+has enough resources to run two parallel light builds or one heavy.
 
-CI инфраструктура представляет собой Jenkins-сервер у которого есть несколько
-slave-узлов, выполняющих разные задачи. Каждый slave-узел имеет некоторое
-количество слотов, определяющее максимальное количество одновременно
-обрабатываемых задач. Если задач больше, чем свободных слотов, то часть задач
-ожидает в очереди.
+We want to run as much builds as possible but do it in a such a way that none of
+nodes will be overloaded.
 
-Каждый узел имеет ограниченное количество таких ресурсов как CPU, память,
-жесткий диск или сеть. Различные задачи потребляют различное количество
-ресурсов: например, сборка небольшого фронтенд-проекта может требовать гораздо
-меньше памяти, чем прогон тестов большого бекенд-проекта. С другой стороны
-по-умолчанию каждый проект занимает ровно один слот. Таким образом на одном и
-том же slave-узле могут быть одновременно запущены несколько тяжелых проектов
-или несколько легких, поэтому иногда возникает ситуация, когда узел перегружен
-и все задачи выполняются очень медленно или завершаются с ошибкой.
+### Separate worker for heavy builds
 
-Есть несколько способов выхода из данной ситуации, у каждого из которых есть
-свои плюсы и минусы:
+The idea is to configure Jenkins setup in such a way:
 
-* создать отдельный slave-узел для тяжелых задач и отдельный для легких;
-* использовать плагин
-    [lockable-resources](https://www.jenkins.io/doc/pipeline/steps/lockable-resources/);
-* использовать Freestyle проекты;
-* использовать workaround на Groovy.
+* worker 1 should have 2 slots and perform only light builds;
+* worker 2 should have 1 slot and perform light and heavy builds.
 
-Предположим, что существуют два типа задач: тяжелые и легкие. Тяжелые требуют
-в два раза больше ресурсов чем легкие. Есть два slave-узла по два слота на
-каждом. Каждый слот соответствует количеству ресурсов, необходимому для
-комфортной обработки легкой задачи.
+Pros: workers will be never overloaded.
+Cons: in some cases worker 2 will use only half of resources.
 
-Задача: необходимо настроить запуск задач таким образом, чтобы не перегружать
-slave-узлы.
+### lockable-resources
 
-Рассмотрим подробнее каждый из предложенных выше вариантов для решения этой
-задачи.
-
-### Отдельный Slave для тяжелых задач
-
-Считаем что slave-1 будет использоваться только для легких задач и иметь два
-слота, а slave-2 будет использоваться как для легких, так и для тяжелых задач,
-но при этом будет иметь только один слот.
-
-**Плюсы**: slave-узлы не перегружены.
-
-**Минусы**: в некоторых случаях задачи выполняются не так эффективно как могли
-бы. Например, можно запустить максимум три легких задачи или одну тяжелую,
-вместо четырех легких и двух тяжелых.
-
-### Плагин lockable-resources
-
-С помощью плагина
-[lockable-resources](https://www.jenkins.io/doc/pipeline/steps/lockable-resources/)
-настраивается четыре ресурса с названием «slot». В легкой задаче блокируется
-один слот на время обработки задачи:
+Configure 4 resources named "slot" using
+[lockable-resources](https://www.jenkins.io/doc/pipeline/steps/lockable-resources/).
+For light build lock one "slot" resource:
 
 ```groovy
 lock(label: 'slot', quantity: 1) {
-    echo "Process light task"
+    echo 'Perform light build'
 }
 ```
-
-В тяжелой задаче блокируется два слота на время обработки задачи:
+For heavy build - lock 2 resources:
 
 ```groovy
 lock(label: 'slot', quantity: 2) {
-    echo "Process heavy task"
+    echo 'Perform heavy build'
 }
 ```
 
-**Плюсы**: slave-узлы утилизируются по-максимуму.
+Pros: workers will run as much builds as possible.
+Cons: in some cases workers can be overloaded.
 
-**Минусы**: в некоторых случаях slave-узлы перегружены (допустим на slave-1
-запущена легкая задача и на slave-2 запущена легкая задач, при попытке
-запустить тяжелую задачу она запустится, так как доступно два слота, при этом
-один из узлов будет перегружен).
+### Freestyle projects
 
-### Freestyle проекты
+It's possible to use freestyle projects with
+[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) which solves
+the problem completely.
 
-Можно не использовать Pipeline проекты и ограничиться Freestyle проектами с
-[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin).
+Pros: workers will run as much builds as possible, workers won't be overloaded.
+Cons: we can't use configuration as a code.
 
-**Плюсы**: slave-узлы утилизируются по-максимуму, но не перегружаются.
+### Conclustion
 
-**Минусы**: невозможно описывать конфигурацию в коде.
+Each described solution has pros and cons and it will be very useful to have
+something like HeavyJob Plugin but for pipeline projects. As I've found in
+[Jenkins Jira](https://issues.jenkins-ci.org/browse/JENKINS-41940) there are no
+such a plugin that is why Pipeline HeavyJob Plugin was developed.
 
-### Workaround на Groovy
-
-Можно использовать такой хак для занятия нужного количества слотов:
-
-```groovy
-def multiSlotNode_(String label, int slots = 1, java.util.concurrent.atomic.AtomicInteger nodeAcquired, Closure body) {
-    if (slots == 1) {
-        node(label) {
-            nodeAcquired.addAndGet(1)
-            body()
-        }
-    } else if (slots > 1) {
-        node(label) {
-            nodeAcquired.addAndGet(1)
-            multiSlotNode_(env.NODE_NAME, slots - 1, nodeAcquired, body)
-        }
-    } else {
-        throw new IllegalArgumentException("Number of slots must be greather than zero")
-    }
-}
-
-def multiSlotNode(String label, int slots = 1, Closure body) {
-
-    def nodeAcquired = new java.util.concurrent.atomic.AtomicInteger(0)
-
-    timestamps {
-        def rerun = true
-        while (rerun) {
-
-            try {
-                parallel (
-                    failFast: true,
-
-                    "timer" : {
-                        timeout(time: 5, unit: 'SECONDS') {
-                            waitUntil {
-                                return nodeAcquired.get() >= slots
-                            }
-                        }
-                    },
-
-                    "job" : {
-                        nodeAcquired.set(0)
-                        rerun = false
-                        multiSlotNode_(label, slots, nodeAcquired, body)
-                    }
-                )
-            } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException ex) {
-                // Timeout to get available nodes. Trying again later
-                sleep time: 60, unit: 'SECONDS'
-                rerun = true
-            }
-        }
-    }
-}
-
-multiSlotNode('', 4, {sleep(time: 10, unit: 'SECONDS'); println "HELLO WORLD"} )
-```
-
-Плюсы и минусы такие же как и у варианта с плагином lockable-resources.
-
-### Вывод
-
-Хотелось бы иметь все преимущества Heavy Job Plugin в Pipeline-проектах. Судя
-по [тикету в Jira Jenkins](https://issues.jenkins-ci.org/browse/JENKINS-41940)
-такое поведение хотят многие, но оно до сих пор не реализовано.
+[![Sponsored by FunBox](https://funbox.ru/badges/sponsored_by_funbox_centered.svg)](https://funbox.ru)
