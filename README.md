@@ -1,8 +1,8 @@
 # Pipeline HeavyJob Plugin
 
 This plugin allows defining job weight for pipeline projects as
-[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) for freestyle
-projects.
+[HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) does for
+freestyle projects.
 
 [По-русски](./README.ru.md)
 
@@ -39,9 +39,8 @@ pipeline {
 ## Rationale
 
 Typical Jenkins setup consists of the main server with several worker nodes.
-Each node has several slots. By default one build occupies one slot. If the
-quantity of builds is larger than the quantity of slots some of the builds wait
-in the queue.
+Each node has several slots. By default one build occupies one slot. Some builds
+will wait in a queue if there are no more free slots available.
 
 Each node has a limited amount of resources like CPU, RAM, or network. Different
 builds require different amount of these resources but each build occupies only
@@ -51,11 +50,11 @@ almost idle.
 There are several ways to solve such a problem.
 
 Suppose we have two types of builds: light and heavy. Heavy build requires twice
-much more resources than light one. Suppose we have two worker nodes. Each node
-has enough resources to run two parallel light builds or one heavy.
+twice as much resources as light one. Suppose we have two worker nodes. Each
+node has enough resources to run two parallel light builds or one heavy.
 
-We want to run as much builds as possible but do it in a such a way that none of
-nodes will be overloaded.
+We want to run as many builds as possible but do it in a such a way that none of
+the nodes will be overloaded.
 
 ### Separate worker for heavy builds
 
@@ -64,21 +63,21 @@ The idea is to configure Jenkins setup in such a way:
 * worker 1 should have 2 slots and perform only light builds;
 * worker 2 should have 1 slot and perform light and heavy builds.
 
-Pros: workers will be never overloaded.
-Cons: in some cases worker 2 will use only half of resources.
+Pros: workers will never be overloaded.
+Cons: in some cases worker 2 will utilize only half of the available resources.
 
 ### lockable-resources
 
-Configure 4 resources named "slot" using
+Configure 4 resources named “slot” using
 [lockable-resources](https://www.jenkins.io/doc/pipeline/steps/lockable-resources/).
-For light build lock one "slot" resource:
+For light build lock one “slot” resource:
 
 ```groovy
 lock(label: 'slot', quantity: 1) {
     echo 'Perform light build'
 }
 ```
-For heavy build - lock 2 resources:
+For heavy build — lock 2 resources:
 
 ```groovy
 lock(label: 'slot', quantity: 2) {
@@ -86,7 +85,7 @@ lock(label: 'slot', quantity: 2) {
 }
 ```
 
-Pros: workers will run as much builds as possible.
+Pros: workers will run as many builds as possible.
 Cons: in some cases workers can be overloaded.
 
 ### Freestyle projects
@@ -95,7 +94,7 @@ It's possible to use freestyle projects with
 [HeavyJob Plugin](https://github.com/jenkinsci/heavy-job-plugin) which solves
 the problem completely.
 
-Pros: workers will run as much builds as possible, workers won't be overloaded.
+Pros: workers will run as many builds as possible, workers won't be overloaded.
 Cons: we can't use configuration as a code.
 
 ### Conclustion
@@ -104,5 +103,11 @@ Each described solution has pros and cons and it will be very useful to have
 something like HeavyJob Plugin but for pipeline projects. As I've found in
 [Jenkins Jira](https://issues.jenkins-ci.org/browse/JENKINS-41940) there are no
 such a plugin that is why Pipeline HeavyJob Plugin was developed.
+
+## Implementation details
+
+This plugin implements `nodeWithWeight` step and `nodeWithWeight` agent based on
+it. The code of the plugin is base on the code of
+[workflow-durable-task-step-plugin](https://github.com/jenkinsci/workflow-durable-task-step-plugin).
 
 [![Sponsored by FunBox](https://funbox.ru/badges/sponsored_by_funbox_centered.svg)](https://funbox.ru)
