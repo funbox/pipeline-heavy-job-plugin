@@ -175,32 +175,42 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
         List<SubTask> r = new ArrayList<SubTask>();
         r.add(this);
         for (int i=1; i < weight; i++)
-            r.add(new SubTask() {
-                public Queue.Executable createExecutable() throws IOException {
-                    return new ExecutableImpl(this);
-                }
-
-                @Override
-                public Object getSameNodeConstraint() {
-                    // must occupy the same node as the project itself
-                    return PlaceholderTask.this;
-                }
-
-                @Override
-                public long getEstimatedDuration() {
-                    return PlaceholderTask.this.getEstimatedDuration();
-                }
-
-                @Nonnull
-                public Queue.Task getOwnerTask() {
-                    return PlaceholderTask.this;
-                }
-
-                public String getDisplayName() {
-                    return PlaceholderTask.this.getDisplayName();
-                }
-            });
+            r.add(new WasteTimeSubTask());
         return r;
+    }
+
+    @ExportedBean
+    public final class WasteTimeSubTask implements SubTask {
+        public Queue.Executable createExecutable() {
+            return new ExecutableImpl(this);
+        }
+
+        @Override
+        public Object getSameNodeConstraint() {
+            // must occupy the same node as the project itself
+            return PlaceholderTask.this; // see javadoc SubTask getSameNodeConstraint
+        }
+
+        @Override
+        public long getEstimatedDuration() {
+            return PlaceholderTask.this.getEstimatedDuration();
+        }
+
+        @Override
+        public Queue.Task getOwnerTask() {
+            return PlaceholderTask.this;
+        }
+
+        @Exported
+        @Override
+        public String getDisplayName() {
+            return "part of " + PlaceholderTask.this.getDisplayName();
+        }
+
+        @Exported
+        public String getFullDisplayName() {
+            return "part of " + PlaceholderTask.this.getDisplayName();
+        }
     }
 
     @Nonnull
@@ -214,7 +224,7 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
     }
 
     @Override public Object getSameNodeConstraint() {
-        return null;
+        return this; // see javadoc SubTask getSameNodeConstraint
     }
 
     /**
@@ -768,9 +778,9 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
         }
     }
 
+    @ExportedBean
     public static class ExecutableImpl implements Queue.Executable {
         private final SubTask parent;
-        private final Executor executor = Executor.currentExecutor();
 
         private ExecutableImpl(SubTask parent) {
             this.parent = parent;
@@ -781,10 +791,6 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
             return parent;
         }
 
-        public AbstractBuild<?,?> getBuild() {
-            return (AbstractBuild<?,?>)executor.getCurrentWorkUnit().context.getPrimaryWorkUnit().getExecutable();
-        }
-
         public void run() {
             // nothing. we just waste time
         }
@@ -793,6 +799,15 @@ public final class PlaceholderTask implements ContinuedTask, Serializable, Acces
             return parent.getEstimatedDuration();
         }
 
+        @Exported
+        public String getDisplayName() {
+            return parent.getDisplayName();
+        }
+
+        @Exported
+        public String getFullDisplayName() {
+            return parent.getDisplayName();
+        }
     }
 
     private static final long serialVersionUID = 1098885580375315588L; // as of 2.12

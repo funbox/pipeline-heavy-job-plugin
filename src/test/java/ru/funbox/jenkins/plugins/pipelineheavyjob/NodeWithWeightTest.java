@@ -51,8 +51,7 @@ public class NodeWithWeightTest {
         WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition("nodeWithWeight(label: 'label1', weight: 1) { echo 'test' }", true));
         WorkflowRun b = p.scheduleBuild2(0).waitForStart();
-        j.waitForCompletion(b);
-        j.assertLogContains("Finished: SUCCESS", b);
+        j.waitForMessage("Finished: SUCCESS", b);
     }
 
     @Test public void checkBuildWaitingInQueue() throws Exception {
